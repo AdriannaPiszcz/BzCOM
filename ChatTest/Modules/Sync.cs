@@ -662,13 +662,13 @@ public partial class XCTIPSyncRecords_ANSRowCause
 [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
 public partial class XCTIPSyncAnswer
 {
-    private int cIdField;
+    private string cIdField;
 
     private string errorField;
 
     /// <remarks/>
     [System.Xml.Serialization.XmlElementAttribute(Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
-    public int CId
+    public string CId
     {
         get
         {

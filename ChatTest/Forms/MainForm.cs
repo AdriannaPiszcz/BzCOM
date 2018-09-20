@@ -78,6 +78,11 @@ namespace ChatTest
                     return;
                 action();
             }
+
+            //DoOnUIThread(this, () =>
+            //{
+
+            //});
         }
 
         private void InsertTag(string tag)
@@ -233,8 +238,8 @@ namespace ChatTest
             }
             else
             {
-                this.ListBoxLogger.Items.Add(text);
-                this.ListBoxLogger.TopIndex = ListBoxLogger.Items.Count - 1;
+                ListBoxLogger.Items.Add(text);
+                ListBoxLogger.TopIndex = ListBoxLogger.Items.Count - 1;
             }
         }
 
@@ -243,7 +248,7 @@ namespace ChatTest
             if (ListViewAddressBook.InvokeRequired)
             {
                 SetUsersCallBack f = new SetUsersCallBack(SetBook);
-                this.Invoke(f, new object[] { bookList });
+                Invoke(f, new object[] { bookList });
             }
             else
             {
@@ -404,18 +409,21 @@ namespace ChatTest
 
                 /// Manages the initial import of statuses and description
                 SetColor(trafficController.SetColor(temp));
+                
+                /// Register sms module
+                trafficController.SMSRegister();
+
+                /// Ustawiamy status oznaczający, że wszystkie dane zostały już ustawione i możemy działać w naszej aplikacji
+                trafficController.SetState(State.DataSet);
             }
             /// Changes the status displayed in combobox, when you logged in
             if (trafficController.GetState() == State.LoggedIn)
             {
                 ChangeComboBox(Status.AVAILABLE.ToString());
             }
-            /// Register sms module
-            trafficController.SMSRegister();
 
             TextBoxLogin.Text = "";
             TextBoxPassword.Text = "";
-            ListenerThread.RunWorkerAsync();
         }
 
         /// <summary>
@@ -453,25 +461,15 @@ namespace ChatTest
         //}
 
 
-        private void Listener_DoWork(object sender, DoWorkEventArgs e)
-        {
-            while (true)
-            {
-                /// pobieranie bieżących danych
-                trafficController.GetData();
-
-                /// sprawdzanie czy w bieżących danych znajduje się aktualizacja statusu
-                trafficController.UpdateStatus();
-
-                /// sprawdzanie czy w bieżących danych znajduje się nadchodząca wiadomość
-                trafficController.GetMessage();
-            }
-        }
-
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Control && e.KeyCode == Keys.L)
                 loggerActive = true;
+        }
+
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+
         }
     }
 }

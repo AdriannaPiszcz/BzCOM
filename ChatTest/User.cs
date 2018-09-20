@@ -1,9 +1,12 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 
 namespace ChatTest
 {
     public class User
     {
+
         public string UserId { get; set; }
 
         public string ContactId { get; set; }
@@ -22,9 +25,5 @@ namespace ChatTest
 
         public string PhoneDesc { get; set; }
 
-        public User()
-        {
-            UserState = Status.UNKNOWN;
-        }
     }
 }

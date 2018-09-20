@@ -140,13 +140,13 @@ public partial class XCTIPLogMakeLog {
 [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
 public partial class XCTIPLogAnswer
 {
-    private int cIdField;
+    private string cIdField;
 
     private string errorField;
 
     /// <remarks/>
     [System.Xml.Serialization.XmlElementAttribute(Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
-    public int CId
+    public string CId
     {
         get
         {

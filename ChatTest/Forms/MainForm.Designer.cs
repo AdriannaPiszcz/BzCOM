@@ -66,7 +66,6 @@
             this.labelUnavailable = new System.Windows.Forms.Label();
             this.labelBrb = new System.Windows.Forms.Label();
             this.labelBusy = new System.Windows.Forms.Label();
-            this.ListenerThread = new System.ComponentModel.BackgroundWorker();
             ((System.ComponentModel.ISupportInitialize)(this.NumericUpDownPort)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
             this.contextMenuStrip2.SuspendLayout();
@@ -420,10 +419,6 @@
             this.labelBusy.TabIndex = 28;
             this.labelBusy.Text = "BUSY";
             // 
-            // ListenerThread
-            // 
-            this.ListenerThread.DoWork += new System.ComponentModel.DoWorkEventHandler(this.Listener_DoWork);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -456,6 +451,7 @@
             this.KeyPreview = true;
             this.Name = "MainForm";
             this.Text = "BzCOM";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainForm_KeyDown);
             ((System.ComponentModel.ISupportInitialize)(this.NumericUpDownPort)).EndInit();
             this.contextMenuStrip1.ResumeLayout(false);
@@ -506,7 +502,6 @@
         private System.Windows.Forms.ColumnHeader order;
         private System.Windows.Forms.ToolStripMenuItem edytujToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem szczegółyKontaktuToolStripMenuItem;
-        private System.ComponentModel.BackgroundWorker ListenerThread;
     }
 }
 

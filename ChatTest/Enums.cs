@@ -16,6 +16,7 @@ namespace ChatTest
         Disconnected,
         Connected,
         LoggedIn,
+        DataSet,
         OpenedGate
     }
 }

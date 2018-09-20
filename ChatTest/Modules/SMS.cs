@@ -168,13 +168,13 @@
     [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
     public partial class XCTIPSMSAnswer
     {
-        private int cIdField;
+        private string cIdField;
 
         private string errorField;
 
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute("CId", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
-        public int CId { get => cIdField; set => cIdField = value; }
+        public string CId { get => cIdField; set => cIdField = value; }
 
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute("Error", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]

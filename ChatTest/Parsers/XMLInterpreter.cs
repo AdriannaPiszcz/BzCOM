@@ -10,8 +10,6 @@ namespace ChatTest
 
         private Connection connection;
 
-        private XCTIP packet;
-
         public string Error { get; set; }
 
         private Logger logger = new Logger();
@@ -25,36 +23,18 @@ namespace ChatTest
         /// Funkcja zwraca stosowną odpowiedź na polecenie zalogowania
         /// </summary>
         /// <returns></returns>
-        public string LogIn()
+        public string LogIn(XCTIP packet)
         {
-            string answer = String.Empty;
-            foreach (var item in connection.GetFramesList())
-            {
-                packet = ServiceXML.GenericDeserialize<XCTIP>(item);
-                if (packet.LogItems != null && packet.LogItems[0].Answer != null)
-                {
-                    var error = packet.LogItems[0].Answer[0].Error;
-                    if (error == null || error == "")
-                    {
-                        connection.State = State.LoggedIn;
-                        answer = "Logowanie zakończono pomyślnie!  ";
-                    }
-                    else
-                    {
-                        answer = error;
-                        logger.Debug($"Error:\n{error}\n");
-                    }
-                }
-                answer = answer + CurrentUserInfo();
-            }
-            return answer;
+            if (!LogError(packet))
+                return CurrentUserInfo(packet);
+            return null;
         }
 
         /// <summary>
         /// Funkcja zwraca informacje o zalogowanym użytkowniku
         /// </summary>
         /// <returns></returns>
-        public string CurrentUserInfo()
+        public string CurrentUserInfo(XCTIP packet)
         {
             string answer = null;
             if (packet.LogItems != null && packet.LogItems[0].LogInfo_ANS != null)
@@ -64,15 +44,13 @@ namespace ChatTest
             return answer;
         }
 
-        public List<User> GetBook()
+        public void GetBook(List<XCTIP> packets)
         {
             List<User> bookList = new List<User>();
             if (connection.State == State.LoggedIn)
             {
-                foreach (var item in connection.GetFramesList())
+                foreach (var packet in packets)
                 {
-
-                    packet = ServiceXML.GenericDeserialize<XCTIP>(item);
                     if (packet.SyncItems != null && packet.SyncItems[0].Answer != null && packet.SyncItems[0].Answer[0].Error != null)
                     {
                         var error = packet.SyncItems[0].Answer[0].Error;
@@ -113,17 +91,14 @@ namespace ChatTest
                 logger.Debug($"Error:\n{Error}\n");
             }
             UserInfo = bookList;
-            return bookList;
         }
 
-        public List<User> GetStatus()
+        public List<User> GetStatus(List<XCTIP> packets)
         {
             List<User> users = new List<User>();
-
-            foreach (var item in connection.GetFramesList())
+            foreach (var packet in packets)
             {
                 User user = new User();
-                packet = ServiceXML.GenericDeserialize<XCTIP>(item);
                 if (packet.StatusItems != null && packet.StatusItems[0].Refresh_EV != null)
                 {
                     user.UserId = packet.StatusItems[0].Refresh_EV[0].Id;
@@ -141,7 +116,7 @@ namespace ChatTest
                 }
                 users.Add(user);
             }
-
+            UserInfo = users;
             return users;
         }
 
@@ -150,46 +125,53 @@ namespace ChatTest
         /// 
         /// </summary>
         /// <returns></returns>
-        public List<User> GetChangedStatus()
+        public List<User> GetChangedStatus(List<XCTIP> packets)
         {
             List<User> users = new List<User>();
             User user = new User();
-            if (packet.StatusItems != null && packet.StatusItems[0].Change_EV != null)
+            foreach (var packet in packets)
             {
-                user.UserId = packet.StatusItems[0].Change_EV[0].Id;
-                foreach (var el in UserInfo)
-                {
-                    if (el.UserId == user.UserId)
-                        user.UserName = el.UserName;
-                }
-                if (packet.StatusItems[0].Change_EV[0].AppState != null)
-                {
-                    user.UserState = (Status)Enum.Parse(typeof(Status), packet.StatusItems[0].Change_EV[0].AppState);
-                    packet.StatusItems[0].Change_EV[0].AppState = null;
-                }
 
-                if (packet.StatusItems[0].Change_EV[0].AppInfo != null)
+                if (packet.StatusItems != null && packet.StatusItems[0].Change_EV != null)
                 {
-                    user.UserDesc = packet.StatusItems[0].Change_EV[0].AppInfo;
-                    packet.StatusItems[0].Change_EV[0].AppInfo = null;
+                    user.UserId = packet.StatusItems[0].Change_EV[0].Id;
+                    foreach (var el in UserInfo)
+                    {
+                        if (el.UserId == user.UserId)
+                            user.UserName = el.UserName;
+                    }
+                    if (packet.StatusItems[0].Change_EV[0].AppState != null)
+                    {
+                        user.UserState = (Status)Enum.Parse(typeof(Status), packet.StatusItems[0].Change_EV[0].AppState);
+                        packet.StatusItems[0].Change_EV[0].AppState = null;
+                    }
+
+                    if (packet.StatusItems[0].Change_EV[0].AppInfo != null)
+                    {
+                        user.UserDesc = packet.StatusItems[0].Change_EV[0].AppInfo;
+                        packet.StatusItems[0].Change_EV[0].AppInfo = null;
+                    }
+                    users.Add(user);
                 }
-            users.Add(user);
             }
             return users;
         }
 
-        public List<Message> GetMessageRecords_EV()
+        public List<Message> GetMessageRecords_EV(List<XCTIP> packets)
         {
             Message message = new Message();
             List<Message> messages = new List<Message>();
-            if (packet.SyncItems != null && packet.SyncItems[0].Records_EV != null && packet.SyncItems[0].Records_EV[0].Row != null)
-                foreach (var item in packet.SyncItems[0].Records_EV[0].Row)
-                {
-                    message.DateTime = Convert.ToDateTime(item.HistoryMsg[0].Date);
-                    message.Number = Convert.ToInt32(item.HistoryMsg[0].Number);
-                    message.Text = item.HistoryMsg[0].Text;
-                    messages.Add(message);
-                }
+            foreach (var packet in packets)
+            {
+                if (packet.SyncItems != null && packet.SyncItems[0].Records_EV != null && packet.SyncItems[0].Records_EV[0].Row != null)
+                    foreach (var item in packet.SyncItems[0].Records_EV[0].Row)
+                    {
+                        message.DateTime = Convert.ToDateTime(item.HistoryMsg[0].Date);
+                        message.Number = Convert.ToInt32(item.HistoryMsg[0].Number);
+                        message.Text = item.HistoryMsg[0].Text;
+                        messages.Add(message);
+                    }
+            }
             return messages;
         }
 
@@ -197,7 +179,11 @@ namespace ChatTest
         {
 
             List<Message> messages = new List<Message>();
-            if (packet.SyncItems != null && packet.SyncItems[0].Records_ANS != null && packet.SyncItems[0].Records_ANS[0].Row != null)
+            foreach (var packet in TrafficController.asyncData)
+            {
+                if (packet.SyncItems == null || packet.SyncItems[0].Records_ANS == null || packet.SyncItems[0].Records_ANS[0].Row == null)
+                    throw new FormatException("Nieprawidłowy format ramki");
+
                 foreach (var item in packet.SyncItems[0].Records_ANS[0].Row)
                 {
                     Message message = new Message();
@@ -208,53 +194,121 @@ namespace ChatTest
                     message.Number = Convert.ToInt32(item.HistoryMsg[0].Number);
                     message.Text = item.HistoryMsg[0].Text;
                     messages.Add(message);
+                    TrafficController.asyncData.Remove(packet);
                 }
+            }
             return messages;
         }
 
-        public Message GetSMSReceive_EV()
+        public Message GetSMSReceive_EV(List<XCTIP> packets)
         {
             Message message = new Message();
-            if (packet.SMSItems == null || packet.SMSItems[0].Receive_EV == null)
-                return message;
+            foreach (var packet in packets)
+            {
 
-            message.DateTime = Convert.ToDateTime(packet.SMSItems[0].Receive_EV[0].RecvTime);
-            message.Number = Convert.ToInt32(packet.SMSItems[0].Receive_EV[0].Number);
-            message.Text = packet.SMSItems[0].Receive_EV[0].Text;
-            packet.SMSItems[0].Receive_EV = null;
+                if (packet.SMSItems == null || packet.SMSItems[0].Receive_EV == null)
+                    return message;
 
+                message.DateTime = Convert.ToDateTime(packet.SMSItems[0].Receive_EV[0].RecvTime);
+                message.Number = Convert.ToInt32(packet.SMSItems[0].Receive_EV[0].Number);
+                message.Text = packet.SMSItems[0].Receive_EV[0].Text;
+                packet.SMSItems[0].Receive_EV = null;
+
+            }
             return message;
         }
 
-        public bool IsSyncChange_EV()
+        public bool IsSyncChange_EV(List<XCTIP> packets)
         {
-            if (packet.SyncItems == null || packet.SyncItems[0].Change_EV == null)
-                return false;
-
+            foreach (var packet in packets)
+            {
+                if (packet.SyncItems == null || packet.SyncItems[0].Change_EV == null)
+                    return false;
+            }
             return true;
         }
 
-        public bool SMSError()
+        /// <summary>
+        /// Error na module SMS - wywoływany zawsze po wysłaniu ramki, bo zawsze otrzymujemy wiadomość i zawsze może ona zawierać error
+        /// </summary>
+        /// <returns></returns>
+        public bool SMSError(XCTIP packet)
         {
-            bool error;
-            if (packet.SMSItems != null && packet.SMSItems[0].Answer != null)
+            if (packet.SMSItems == null || packet.SMSItems[0].Answer == null)
+                throw new FormatException($"Nieprawdłowa ramka zwrotna");
+
+            if (packet.SMSItems[0].Answer[0].Error == null)
             {
-                if (packet.SMSItems[0].Answer[0].Error == null)
-                    error = false;
-                else
-                    error = true;
+                logger.Debug(packet.SMSItems[0].Answer[0].Error);
+                return false;
             }
             else
-                error = true;
-            return error;
+                return true;
         }
 
-        public void ParsePacket()
+        /// <summary>
+        /// Error na module Sync - wywoływany zawsze po wysłaniu ramki, bo zawsze otrzymujemy wiadomość i zawsze może ona zawierać error
+        /// </summary>
+        /// <returns></returns>
+        public bool SyncError(XCTIP packet)
         {
+            if (packet.SyncItems == null || packet.SyncItems[0].Answer == null)
+                return true;
+
+            if (packet.SyncItems[0].Answer[0].Error == null)
+                return false;
+            else
+            {
+                logger.Debug(packet.SyncItems[0].Answer[0].Error);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Error na module Log - wywoływany zawsze po wysłaniu ramki, bo zawsze otrzymujemy wiadomość i zawsze może ona zawierać error
+        /// </summary>
+        /// <returns></returns>
+        public bool LogError(XCTIP packet)
+        {
+            if (packet.LogItems == null || packet.LogItems[0].Answer == null)
+                return false;
+
+            if (packet.LogItems[0].Answer[0].Error == null)
+                return false;
+            else
+            {
+                logger.Debug(packet.LogItems[0].Answer[0].Error);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Error na module Status - wywoływany zawsze po wysłaniu ramki, bo zawsze otrzymujemy wiadomość i zawsze może ona zawierać error
+        /// </summary>
+        /// <returns></returns>
+        public bool StatusError(XCTIP packet)
+        {
+            if (packet.StatusItems == null || packet.StatusItems[0].Answer == null)
+                return true;
+
+            if (packet.StatusItems[0].Answer[0].Error == null)
+                return false;
+            else
+            {
+                logger.Debug(packet.StatusItems[0].Answer[0].Error);
+                return true;
+            }
+        }
+
+        public List<XCTIP> ParsePacket()
+        {
+            List<XCTIP> packets = new List<XCTIP>();
             foreach (var item in connection.GetFramesList())
             {
-                packet = ServiceXML.GenericDeserialize<XCTIP>(item);
+                var packet = ServiceXML.GenericDeserialize<XCTIP>(item);
+                packets.Add(packet);
             }
+            return packets;
         }
     }
 }

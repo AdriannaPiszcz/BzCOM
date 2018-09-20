@@ -95,7 +95,6 @@ namespace ChatTest
             
             try
             {
-                //SetText("Proszę czekać...");
                 Thread.Sleep(500);
                 while (stream.DataAvailable)
                 {
