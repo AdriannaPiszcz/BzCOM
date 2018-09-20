@@ -39,12 +39,16 @@ namespace ChatTest
             string answer = null;
             lock (TrafficController.asyncData)
             {
-                foreach (var packet in TrafficController.asyncData)
+                for (int i = 0; i < TrafficController.asyncData.Count;)
                 {
+                    var packet = TrafficController.asyncData[i];
                     if (packet.LogItems != null && packet.LogItems[0].LogInfo_ANS != null)
                     {
                         answer = "Witaj! Twój numer telefonu to: " + packet.LogItems[0].LogInfo_ANS[0].Number;
+                        TrafficController.asyncData.RemoveAt(i);
                     }
+                    else
+                        i++;
                 }
             }
             return answer;
@@ -56,13 +60,14 @@ namespace ChatTest
             {
                 lock (TrafficController.asyncData)
                 {
-
-                    foreach (var packet in TrafficController.asyncData)
+                    for (int i = 0; i < TrafficController.asyncData.Count;)
                     {
-
+                        var packet = TrafficController.asyncData[i];
                         if (packet.SyncItems == null || packet.SyncItems[0].Records_ANS == null)
-                            return;
-
+                        {
+                            i++;
+                            continue;
+                        }
                         foreach (var row in packet.SyncItems[0].Records_ANS[0].Row)
                         {
                             User user = new User();
@@ -82,7 +87,7 @@ namespace ChatTest
                                 UserInfo.Add(user);
                             }
                         }
-                        TrafficController.asyncData.Remove(packet);
+                        TrafficController.asyncData.RemoveAt(i);
                     }
                 }
             }
