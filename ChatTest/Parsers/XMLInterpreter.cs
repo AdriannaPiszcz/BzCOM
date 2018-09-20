@@ -26,7 +26,7 @@ namespace ChatTest
         public string LogIn(XCTIP packet)
         {
             if (!LogError(packet))
-                return CurrentUserInfo(packet);
+                return CurrentUserInfo();
             return null;
         }
 
@@ -34,54 +34,55 @@ namespace ChatTest
         /// Funkcja zwraca informacje o zalogowanym użytkowniku
         /// </summary>
         /// <returns></returns>
-        public string CurrentUserInfo(XCTIP packet)
+        public string CurrentUserInfo()
         {
             string answer = null;
-            if (packet.LogItems != null && packet.LogItems[0].LogInfo_ANS != null)
+            lock (TrafficController.asyncData)
             {
-                answer = "Witaj! Twój numer telefonu to: " + packet.LogItems[0].LogInfo_ANS[0].Number;
+                foreach (var packet in TrafficController.asyncData)
+                {
+                    if (packet.LogItems != null && packet.LogItems[0].LogInfo_ANS != null)
+                    {
+                        answer = "Witaj! Twój numer telefonu to: " + packet.LogItems[0].LogInfo_ANS[0].Number;
+                    }
+                }
             }
             return answer;
         }
 
-        public void GetBook(List<XCTIP> packets)
+        public void GetBook()
         {
-            List<User> bookList = new List<User>();
             if (connection.State == State.LoggedIn)
             {
-                foreach (var packet in packets)
+                lock (TrafficController.asyncData)
                 {
-                    if (packet.SyncItems != null && packet.SyncItems[0].Answer != null && packet.SyncItems[0].Answer[0].Error != null)
+
+                    foreach (var packet in TrafficController.asyncData)
                     {
-                        var error = packet.SyncItems[0].Answer[0].Error;
-                        Error = error;
-                        logger.Debug($"Error:\n{error}\n");
-                    }
-                    else
-                    {
-                        if (packet.SyncItems != null && packet.SyncItems[0].Records_ANS != null)
+
+                        if (packet.SyncItems == null || packet.SyncItems[0].Records_ANS == null)
+                            return;
+
+                        foreach (var row in packet.SyncItems[0].Records_ANS[0].Row)
                         {
-                            foreach (var row in packet.SyncItems[0].Records_ANS[0].Row)
+                            User user = new User();
+                            if (row.Contact != null && row.Contact[0].Name != null)
                             {
-                                User user = new User();
-                                if (row.Contact != null && row.Contact[0].Name != null)
+                                user.UserId = row.Contact[0].IdExtNo;
+                                user.UserName = row.Contact[0].Name;
+                                user.ContactId = row.Contact[0].ContactId;
+                                /// tutaj foreach po phone i pola phone number i phone desc jako tablica słowników, tuple czy cokolwiek
+                                if (row.Contact[0].Phone != null)
                                 {
-                                    user.UserId = row.Contact[0].IdExtNo;
-                                    user.UserName = row.Contact[0].Name;
-                                    user.ContactId = row.Contact[0].ContactId;
-                                    /// tutaj foreach po phone i pola phone number i phone desc jako tablica słowników, tuple czy cokolwiek
-                                    if (row.Contact[0].Phone != null)
-                                    {
-                                        user.PhoneNumber = row.Contact[0].Phone[0].Number;
-                                        user.PhoneDesc = row.Contact[0].Phone[0].Comment;
-                                    }
-
-                                    user.UserNumber = row.Contact[0].ExtNo;
-                                    bookList.Add(user);
+                                    user.PhoneNumber = row.Contact[0].Phone[0].Number;
+                                    user.PhoneDesc = row.Contact[0].Phone[0].Comment;
                                 }
-                            }
 
+                                user.UserNumber = row.Contact[0].ExtNo;
+                                UserInfo.Add(user);
+                            }
                         }
+                        TrafficController.asyncData.Remove(packet);
                     }
                 }
             }
@@ -90,31 +91,42 @@ namespace ChatTest
                 Error = "Najpierw musisz ustanowić połączenie z serwerem i zalogować się";
                 logger.Debug($"Error:\n{Error}\n");
             }
-            UserInfo = bookList;
         }
 
-        public List<User> GetStatus(List<XCTIP> packets)
+        /// <summary>
+        /// Pobiera wszystkie statusy - metoda startowa
+        /// </summary>
+        /// <returns></returns>
+        public List<User> GetStatus()
         {
             List<User> users = new List<User>();
-            foreach (var packet in packets)
+            lock (TrafficController.asyncData)
             {
-                User user = new User();
-                if (packet.StatusItems != null && packet.StatusItems[0].Refresh_EV != null)
+                for (int i = 0; i < TrafficController.asyncData.Count;)
                 {
-                    user.UserId = packet.StatusItems[0].Refresh_EV[0].Id;
-                    foreach (var el in UserInfo)
+                    var packet = TrafficController.asyncData[i];
+                    if (packet.StatusItems != null && packet.StatusItems[0].Refresh_EV != null)
                     {
-                        if (el.UserId == user.UserId)
-                            user.UserName = el.UserName;
+                        User user = new User();
+                        user.UserId = packet.StatusItems[0].Refresh_EV[0].Id;
+                        foreach (var el in UserInfo)
+                        {
+                            if (el.UserId == user.UserId)
+                                user.UserName = el.UserName;
+                        }
+                        if (packet.StatusItems[0].Refresh_EV[0].AppState != null)
+                            user.UserState = (Status)Enum.Parse(typeof(Status), packet.StatusItems[0].Refresh_EV[0].AppState);
+                        else
+                            user.UserState = Status.UNAVAILABLE;
+                        if (packet.StatusItems[0].Refresh_EV[0].AppInfo != null)
+                            user.UserDesc = packet.StatusItems[0].Refresh_EV[0].AppInfo;
+                        users.Add(user);
+                        TrafficController.asyncData.RemoveAt(i);
                     }
-                    if (packet.StatusItems[0].Refresh_EV[0].AppState != null)
-                        user.UserState = (Status)Enum.Parse(typeof(Status), packet.StatusItems[0].Refresh_EV[0].AppState);
                     else
-                        user.UserState = Status.UNAVAILABLE;
-                    if (packet.StatusItems[0].Refresh_EV[0].AppInfo != null)
-                        user.UserDesc = packet.StatusItems[0].Refresh_EV[0].AppInfo;
+                        i++;
                 }
-                users.Add(user);
+
             }
             UserInfo = users;
             return users;
@@ -122,36 +134,41 @@ namespace ChatTest
 
 
         /// <summary>
-        /// 
+        /// Pobiera aktualizacje statusów
         /// </summary>
         /// <returns></returns>
-        public List<User> GetChangedStatus(List<XCTIP> packets)
+        public List<User> GetChangedStatus()
         {
             List<User> users = new List<User>();
             User user = new User();
-            foreach (var packet in packets)
+            lock (TrafficController.asyncData)
             {
 
-                if (packet.StatusItems != null && packet.StatusItems[0].Change_EV != null)
+                foreach (var packet in TrafficController.asyncData)
                 {
-                    user.UserId = packet.StatusItems[0].Change_EV[0].Id;
-                    foreach (var el in UserInfo)
-                    {
-                        if (el.UserId == user.UserId)
-                            user.UserName = el.UserName;
-                    }
-                    if (packet.StatusItems[0].Change_EV[0].AppState != null)
-                    {
-                        user.UserState = (Status)Enum.Parse(typeof(Status), packet.StatusItems[0].Change_EV[0].AppState);
-                        packet.StatusItems[0].Change_EV[0].AppState = null;
-                    }
 
-                    if (packet.StatusItems[0].Change_EV[0].AppInfo != null)
+                    if (packet.StatusItems != null && packet.StatusItems[0].Change_EV != null)
                     {
-                        user.UserDesc = packet.StatusItems[0].Change_EV[0].AppInfo;
-                        packet.StatusItems[0].Change_EV[0].AppInfo = null;
+                        user.UserId = packet.StatusItems[0].Change_EV[0].Id;
+                        foreach (var el in UserInfo)
+                        {
+                            if (el.UserId == user.UserId)
+                                user.UserName = el.UserName;
+                        }
+                        if (packet.StatusItems[0].Change_EV[0].AppState != null)
+                        {
+                            user.UserState = (Status)Enum.Parse(typeof(Status), packet.StatusItems[0].Change_EV[0].AppState);
+                            packet.StatusItems[0].Change_EV[0].AppState = null;
+                        }
+
+                        if (packet.StatusItems[0].Change_EV[0].AppInfo != null)
+                        {
+                            user.UserDesc = packet.StatusItems[0].Change_EV[0].AppInfo;
+                            packet.StatusItems[0].Change_EV[0].AppInfo = null;
+                        }
+                        users.Add(user);
+                        TrafficController.asyncData.Remove(packet);
                     }
-                    users.Add(user);
                 }
             }
             return users;
@@ -179,44 +196,51 @@ namespace ChatTest
         {
 
             List<Message> messages = new List<Message>();
-            foreach (var packet in TrafficController.asyncData)
+            lock (TrafficController.asyncData)
             {
-                if (packet.SyncItems == null || packet.SyncItems[0].Records_ANS == null || packet.SyncItems[0].Records_ANS[0].Row == null)
-                    throw new FormatException("Nieprawidłowy format ramki");
 
-                foreach (var item in packet.SyncItems[0].Records_ANS[0].Row)
+                foreach (var packet in TrafficController.asyncData)
                 {
-                    Message message = new Message();
-                    if (item.HistoryMsg == null)
-                        continue;
+                    if (packet.SyncItems == null || packet.SyncItems[0].Records_ANS == null || packet.SyncItems[0].Records_ANS[0].Row == null)
+                        throw new FormatException("Nieprawidłowy format ramki");
 
-                    message.DateTime = Convert.ToDateTime(item.HistoryMsg[0].Date);
-                    message.Number = Convert.ToInt32(item.HistoryMsg[0].Number);
-                    message.Text = item.HistoryMsg[0].Text;
-                    messages.Add(message);
-                    TrafficController.asyncData.Remove(packet);
+                    foreach (var item in packet.SyncItems[0].Records_ANS[0].Row)
+                    {
+                        Message message = new Message();
+                        if (item.HistoryMsg == null)
+                            continue;
+
+                        message.DateTime = Convert.ToDateTime(item.HistoryMsg[0].Date);
+                        message.Number = Convert.ToInt32(item.HistoryMsg[0].Number);
+                        message.Text = item.HistoryMsg[0].Text;
+                        messages.Add(message);
+                        TrafficController.asyncData.Remove(packet);
+                    }
                 }
             }
             return messages;
         }
 
-        public Message GetSMSReceive_EV(List<XCTIP> packets)
+        public Message GetSMSReceive_EV()
         {
             Message message = new Message();
-            foreach (var packet in packets)
+            lock (TrafficController.asyncData)
             {
+                foreach (var packet in TrafficController.asyncData)
+                {
+                    if (packet.SMSItems == null || packet.SMSItems[0].Receive_EV == null)
+                        return message;
 
-                if (packet.SMSItems == null || packet.SMSItems[0].Receive_EV == null)
-                    return message;
-
-                message.DateTime = Convert.ToDateTime(packet.SMSItems[0].Receive_EV[0].RecvTime);
-                message.Number = Convert.ToInt32(packet.SMSItems[0].Receive_EV[0].Number);
-                message.Text = packet.SMSItems[0].Receive_EV[0].Text;
-                packet.SMSItems[0].Receive_EV = null;
-
+                    message.DateTime = Convert.ToDateTime(packet.SMSItems[0].Receive_EV[0].RecvTime);
+                    message.Number = Convert.ToInt32(packet.SMSItems[0].Receive_EV[0].Number);
+                    message.Text = packet.SMSItems[0].Receive_EV[0].Text;
+                    packet.SMSItems[0].Receive_EV = null;
+                    TrafficController.asyncData.Remove(packet);
+                }
             }
             return message;
         }
+
 
         public bool IsSyncChange_EV(List<XCTIP> packets)
         {

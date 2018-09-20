@@ -31,18 +31,17 @@ namespace ChatTest
             xmlInterpreter = new XMLInterpreter(connection);
         }
 
-        //ConcurrentDi
-
         public void Start()
         {
+            connection.SetConnection();
             while (true)
             {
                 try
                 {
-                    if (connection.State == State.DataSet)
+                    //if (connection.State == State.DataSet)
                     {
                         GetData();
-                        
+
                         GetChangedStatus();
                         GetMessage();
                     }
@@ -79,15 +78,16 @@ namespace ChatTest
         {
             lock (connection)
             {
-                connection.SetConnection();
+
                 string rid;
-                connection.SendingPacket(xmlCreator.MakeLog(login, pass,out rid));
-                var temp = xmlInterpreter.LogIn(GetResponse(rid));
+                connection.SendingPacket(xmlCreator.MakeLog(login, pass, out rid));
+                XCTIP packet = GetResponse(rid);
+                var temp = xmlInterpreter.LogIn(packet);
                 if (temp != null)
                 {
                     SetStatus(Status.AVAILABLE);
                     connection.State = State.LoggedIn;
-                    return $"Zalogowano pomyślnie!\n {temp}";
+                    return $"{temp}";
                 }
                 else
                     return "Wystąpił błąd w trakcie logowania. Spróbuj ponownie.";
@@ -102,16 +102,16 @@ namespace ChatTest
             }
         }
 
-        public List<User> GetAddressBook()
+        public void GetAddressBook()
         {
             lock (connection)
             {
                 string rid;
                 connection.SendingPacket(xmlCreator.Sync_REQ("Book", out rid));
                 if (xmlInterpreter.SyncError(GetResponse(rid)))
-                    return null;
+                    return;
 
-                return xmlInterpreter.GetBook();
+                xmlInterpreter.GetBook();
             }
         }
 
@@ -125,17 +125,17 @@ namespace ChatTest
             }
         }
 
-        public List<User> GetStatus()
+        public List<User> GetUsers()
         {
             lock (connection)
             {
-                connection.SendingPacket(xmlCreator.StatusRegister_REQ()); // zgłaszamy, że chcemy obserwować zmiany statusów
-                var data = GetData();
-                if (data.Count == 0)
+                GetAddressBook();
+                string rid;
+                connection.SendingPacket(xmlCreator.StatusRegister_REQ(out rid)); // zgłaszamy, że chcemy obserwować zmiany statusów
+
+                if (xmlInterpreter.StatusError(GetResponse(rid)))
                     return null;
-                if (xmlInterpreter.StatusError(data))
-                    return null;
-                return xmlInterpreter.GetStatus(data); // zwraca ramki z obecnymi statusami do listy obiektów
+                return xmlInterpreter.GetStatus(); // zwraca ramki z obecnymi statusami do listy obiektów
             }
         }
 
@@ -143,14 +143,15 @@ namespace ChatTest
         {
             lock (connection)
             {
-                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status, info));
-                //xmlInterpreter.StatusError(GetData());
+                string rid;
+                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status, info, out rid));
+                xmlInterpreter.StatusError(GetResponse(rid));
             }
         }
 
-        public void GetChangedStatus(List<XCTIP> data)
+        public void GetChangedStatus()
         {
-            List<User> users = xmlInterpreter.GetChangedStatus(data);
+            List<User> users = xmlInterpreter.GetChangedStatus();
             if (users.Count == 0)
                 return;
             OnUpdateStatus?.Invoke(this, users);
@@ -186,19 +187,19 @@ namespace ChatTest
         public static ConcurrentDictionary<string, XCTIP> responses = new ConcurrentDictionary<string, XCTIP>();
         public static List<XCTIP> asyncData = new List<XCTIP>();
 
-        public XCTIP GetResponse(string id, int timeoutMs=5000)
+        public XCTIP GetResponse(string id, int timeoutMs = 120000)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             XCTIP result;
             while (stopwatch.ElapsedMilliseconds < timeoutMs)
             {
-                if (responses.TryGetValue(id, out result))
+                if (responses.TryRemove(id, out result))
                     return result;
             }
             throw new TimeoutException($"Upłynął czas oczekiwania na odpowiedź {id}");
         }
 
-        public void SMSRegister()
+        public void RegisterToModules()
         {
             lock (connection)
             {
@@ -225,9 +226,9 @@ namespace ChatTest
             }
         }
 
-        public void GetMessage(List<XCTIP> data)
+        public void GetMessage()
         {
-            Message message = xmlInterpreter.GetSMSReceive_EV(data);
+            Message message = xmlInterpreter.GetSMSReceive_EV();
             if (message.Text == null)
                 return;
             OnMessageReceived?.Invoke(this, message);
@@ -251,7 +252,7 @@ namespace ChatTest
 
                 string rid;
                 connection.SendingPacket(xmlCreator.Sync_REQ("HistoryMsg", out rid, "30"));
-                
+
                 if (xmlInterpreter.SyncError(GetResponse(rid)))
                     return null;
 
@@ -264,15 +265,21 @@ namespace ChatTest
             var packets = xmlInterpreter.ParsePacket();
             foreach (var packet in packets)
             {
-                if (packet.LogItems[0].Answer != null || packet.SyncItems[0].Answer != null || packet.StatusItems[0].Answer != null || packet.SMSItems[0].Answer != null)
-                {
+                if (packet.LogItems?[0].Answer != null)
                     responses.TryAdd(packet.LogItems[0].Answer[0].CId, packet);
+                else if (packet.SyncItems?[0].Answer != null)
                     responses.TryAdd(packet.SyncItems[0].Answer[0].CId, packet);
+                else if (packet.StatusItems?[0].Answer != null)
                     responses.TryAdd(packet.StatusItems[0].Answer[0].CId, packet);
+                else if (packet.SMSItems?[0].Answer != null)
                     responses.TryAdd(packet.SMSItems[0].Answer[0].CId, packet);
-                }
                 else
-                    asyncData.Add(packet);
+                {
+                    lock (asyncData)
+                    {
+                        asyncData.Add(packet);
+                    }
+                }
             }
         }
 

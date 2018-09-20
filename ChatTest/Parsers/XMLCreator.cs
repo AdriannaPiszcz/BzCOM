@@ -4,7 +4,7 @@ namespace ChatTest
 {
     public class XMLCreator
     {
-        private static int id = 0;
+        private static int id = 1;
 
         public string Logout()
         {

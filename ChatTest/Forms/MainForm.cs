@@ -396,22 +396,23 @@ namespace ChatTest
         /// <param name="e"></param>
         private void ButtonLogin_Click(object sender, EventArgs e)
         {
-            if (trafficController.GetState() == State.Disconnected)
+            if (trafficController.GetState() == State.Connected)
             {
                 /// Checking, if login went successfully, if not, then showing the error
                 /// SetText powinno być wykorzystywane tylko i wyłącznie do wyświetlania informacji z klasy logującej
                 SetText(trafficController.LogIn(TextBoxLogin.Text, TextBoxPassword.Text));
 
                 /// Manages the initial import of the adress book and statuses
-                trafficController.GetAddressBook();
-                List<User> temp = trafficController.GetStatus();
+                List<User> temp = trafficController.GetUsers();
+                if (temp == null)
+                    SetText("Coś poszło nie tak");
                 SetBook(temp);
 
                 /// Manages the initial import of statuses and description
                 SetColor(trafficController.SetColor(temp));
                 
                 /// Register sms module
-                trafficController.SMSRegister();
+                trafficController.RegisterToModules();
 
                 /// Ustawiamy status oznaczający, że wszystkie dane zostały już ustawione i możemy działać w naszej aplikacji
                 trafficController.SetState(State.DataSet);
