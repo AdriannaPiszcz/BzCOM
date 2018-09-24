@@ -117,7 +117,10 @@ namespace ChatTest
                         foreach (var el in UserInfo)
                         {
                             if (el.UserId == user.UserId)
+                            {
                                 user.UserName = el.UserName;
+                                user.UserNumber = el.UserNumber;
+                            }
                         }
                         if (packet.StatusItems[0].Refresh_EV[0].AppState != null)
                             user.UserState = (Status)Enum.Parse(typeof(Status), packet.StatusItems[0].Refresh_EV[0].AppState);
@@ -149,8 +152,9 @@ namespace ChatTest
             lock (TrafficController.asyncData)
             {
 
-                foreach (var packet in TrafficController.asyncData)
+                for (int i = 0; i < TrafficController.asyncData.Count;)
                 {
+                    var packet = TrafficController.asyncData[i];
 
                     if (packet.StatusItems != null && packet.StatusItems[0].Change_EV != null)
                     {
@@ -172,8 +176,10 @@ namespace ChatTest
                             packet.StatusItems[0].Change_EV[0].AppInfo = null;
                         }
                         users.Add(user);
-                        TrafficController.asyncData.Remove(packet);
+                        TrafficController.asyncData.RemoveAt(i);
                     }
+                    else
+                        i++;
                 }
             }
             return users;
@@ -183,9 +189,11 @@ namespace ChatTest
         {
             Message message = new Message();
             List<Message> messages = new List<Message>();
-            foreach (var packet in packets)
+            for (int i = 0; i < TrafficController.asyncData.Count;)
             {
+                var packet = TrafficController.asyncData[i];
                 if (packet.SyncItems != null && packet.SyncItems[0].Records_EV != null && packet.SyncItems[0].Records_EV[0].Row != null)
+                {
                     foreach (var item in packet.SyncItems[0].Records_EV[0].Row)
                     {
                         message.DateTime = Convert.ToDateTime(item.HistoryMsg[0].Date);
@@ -193,6 +201,10 @@ namespace ChatTest
                         message.Text = item.HistoryMsg[0].Text;
                         messages.Add(message);
                     }
+                    TrafficController.asyncData.RemoveAt(i);
+                }
+                else
+                    i++;
             }
             return messages;
         }
@@ -203,12 +215,14 @@ namespace ChatTest
             List<Message> messages = new List<Message>();
             lock (TrafficController.asyncData)
             {
-
-                foreach (var packet in TrafficController.asyncData)
+                for (int i = 0; i < TrafficController.asyncData.Count;)
                 {
+                    var packet = TrafficController.asyncData[i];
                     if (packet.SyncItems == null || packet.SyncItems[0].Records_ANS == null || packet.SyncItems[0].Records_ANS[0].Row == null)
-                        throw new FormatException("Nieprawidłowy format ramki");
-
+                    {
+                        i++;
+                        continue;
+                    }
                     foreach (var item in packet.SyncItems[0].Records_ANS[0].Row)
                     {
                         Message message = new Message();
@@ -219,7 +233,7 @@ namespace ChatTest
                         message.Number = Convert.ToInt32(item.HistoryMsg[0].Number);
                         message.Text = item.HistoryMsg[0].Text;
                         messages.Add(message);
-                        TrafficController.asyncData.Remove(packet);
+                        TrafficController.asyncData.RemoveAt(i);
                     }
                 }
             }
@@ -231,10 +245,14 @@ namespace ChatTest
             Message message = new Message();
             lock (TrafficController.asyncData)
             {
-                foreach (var packet in TrafficController.asyncData)
+                for (int i = 0; i < TrafficController.asyncData.Count;)
                 {
+                    var packet = TrafficController.asyncData[i];
                     if (packet.SMSItems == null || packet.SMSItems[0].Receive_EV == null)
-                        return message;
+                    {
+                        i++;
+                        continue;
+                    }
 
                     message.DateTime = Convert.ToDateTime(packet.SMSItems[0].Receive_EV[0].RecvTime);
                     message.Number = Convert.ToInt32(packet.SMSItems[0].Receive_EV[0].Number);

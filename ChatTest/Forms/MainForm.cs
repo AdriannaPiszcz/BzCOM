@@ -415,7 +415,7 @@ namespace ChatTest
                 trafficController.RegisterToModules();
 
                 /// Ustawiamy status oznaczający, że wszystkie dane zostały już ustawione i możemy działać w naszej aplikacji
-                trafficController.SetState(State.DataSet);
+                //trafficController.SetState(State.DataSet);
             }
             /// Changes the status displayed in combobox, when you logged in
             if (trafficController.GetState() == State.LoggedIn)
