@@ -30,6 +30,8 @@ namespace ChatTest
             return null;
         }
 
+        
+
         /// <summary>
         /// Funkcja zwraca informacje o zalogowanym użytkowniku
         /// </summary>
@@ -336,13 +338,16 @@ namespace ChatTest
         public bool StatusError(XCTIP packet)
         {
             if (packet.StatusItems == null || packet.StatusItems[0].Answer == null)
+            {
+                logger.Debug("Format pakietu jest niezgodny");
                 return true;
+            }
 
             if (packet.StatusItems[0].Answer[0].Error == null)
                 return false;
             else
             {
-                logger.Debug(packet.StatusItems[0].Answer[0].Error);
+                logger.Debug($"Error: {packet.StatusItems[0].Answer[0].Error}");
                 return true;
             }
         }

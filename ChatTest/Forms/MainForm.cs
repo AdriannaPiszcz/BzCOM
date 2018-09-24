@@ -41,15 +41,25 @@ namespace ChatTest
             }
 
             webBrowser1.Navigate("about:blank");
-            webBrowser1.Document.Write("<html><head><style>body,table { font-size: 10pt; font-family: Verdana; margin: 3px 3px 3px 3px; font-color: black; } </style></head><body width=\"" + (webBrowser1.ClientSize.Width - 20).ToString() + "\">");
+            webBrowser1.Document.Write("<html><head><style>body,table { font-size: 8pt; font-family: Verdana; margin: 3px 3px 3px 3px; font-color: black; } </style></head><body width=\"" + (webBrowser1.ClientSize.Width - 20).ToString() + "\">");
         }
 
+        /// <summary>
+        /// Ustaw wiadomości z loggera, jeśli logowanie ustawiono na aktywne
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="msg"></param>
         private void Logger_OnLoggerMessage(Logger sender, string msg)
         {
             if (loggerActive)
                 SetText(msg);
         }
 
+        /// <summary>
+        /// Edytuj książkę i ustaw odpowiedni kolor - otrzymano zmianę statusu
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="users"></param>
         private void TrafficController_OnUpdateStatus(TrafficController sender, List<User> users)
         {
             EditBook(users);
@@ -60,6 +70,11 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Wpisz na formatkę otrzymaną wiadomość
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="msgNow"></param>
         private void TrafficController_OnMessageReceived(TrafficController sender, Message msgNow)
         {
             TypeText(trafficController.FindName(msgNow.Number.ToString()), msgNow.Text, msgNow.DateTime);
@@ -161,6 +176,7 @@ namespace ChatTest
         {
             if (e.KeyChar == (char)13)
                 this.ButtonSend_Click(sender, e);
+            CursorPosition = TextBoxMessage.SelectionStart;
         }
 
         private void TextBoxPassword_KeyPress(object sender, KeyPressEventArgs e)
@@ -179,6 +195,11 @@ namespace ChatTest
             CursorPosition = TextBoxMessage.SelectionStart;
         }
 
+        /// <summary>
+        /// Wyślij chęć zmiany opisu na serwer
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBoxDescription_KeyPress(object sender, KeyPressEventArgs e)
         {
             if ((trafficController.GetState() == State.LoggedIn || trafficController.GetState() == State.OpenedGate) && e.KeyChar == (char)13)
@@ -186,6 +207,11 @@ namespace ChatTest
 
         }
 
+        /// <summary>
+        /// Symuluje hint'a
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBoxDescription_Enter(object sender, EventArgs e)
         {
             if (TextBoxDescription.Text == "Wpisz i naciśnij enter")
@@ -195,6 +221,11 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Symuluje hint'a
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBoxDescription_Leave(object sender, EventArgs e)
         {
             if (TextBoxDescription.Text == "")
@@ -204,31 +235,50 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Ustaw port
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void NumericUpDownPort_ValueChanged(object sender, EventArgs e)
         {
             trafficController.SetPort(Convert.ToInt32(NumericUpDownPort.Value));
         }
 
+        /// <summary>
+        /// Podwójne kliknięcie na danym kontakcie otwiera z nim rozmowę, numer telefonu zostaje zapisany jako bieżący
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ListViewAddressBook_DoubleClick(object sender, EventArgs e)
         {
-            //if (trafficController.GetState() == State.LoggedIn)
-            //{
+            if (trafficController.GetState() == State.LoggedIn || trafficController.GetState() == State.OpenedGate)
+            {
             ListViewItem selectedItem = ListViewAddressBook.SelectedItems[0];
             currentNumber = trafficController.FindNumber(selectedItem.SubItems[1].Text);
             var temp = ListViewAddressBook.FocusedItem.ListView;
             trafficController.SetState(State.OpenedGate);
             SetText($"Rozmowa z {selectedItem.SubItems[1].Text}");
-            //}
-            //else
-            //SetText("Najpierw musisz ustanowić połączenie!");
+            }
+            else
+            SetText("Najpierw musisz ustanowić połączenie!");
         }
 
+        /// <summary>
+        /// Wyślij informacje o zmianie statusu na serwer
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ComboBoxStatus_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (trafficController.GetState() == State.LoggedIn || trafficController.GetState() == State.OpenedGate)
                 trafficController.SetStatus((Status)Enum.Parse(typeof(Status), ComboBoxStatus.Text));
         }
 
+        /// <summary>
+        /// Ustaw tekst na oknie informacyjnym (loggerze)
+        /// </summary>
+        /// <param name="text"></param>
         public void SetText(string text)
         {
             if (ListBoxLogger.InvokeRequired)
@@ -243,6 +293,12 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Ustaw książkę, ukryj pierszą kolumnę 
+        /// (będzie ona służyła tylko do rozpoznawania statusów w kodzie, 
+        /// w interfejsie status będzie rozróżniany poprzez kolory)
+        /// </summary>
+        /// <param name="bookList"></param>
         private void SetBook(List<User> bookList)
         {
             if (ListViewAddressBook.InvokeRequired)
@@ -266,6 +322,10 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Edytuj książkę po otrzymaniu zmian, sortuj kontakty od dostępnego
+        /// </summary>
+        /// <param name="bookList"></param>
         private void EditBook(List<User> bookList)
         {
             if (ListViewAddressBook.InvokeRequired)
@@ -299,6 +359,10 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Wpisz na webBrowser
+        /// </summary>
+        /// <param name="text"></param>
         private void SetTextHTML(string text)
         {
             if (webBrowser1.InvokeRequired)
@@ -312,6 +376,9 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Scrolluj na dół
+        /// </summary>
         private void SetScroll()
         {
             if (webBrowser1.InvokeRequired)
@@ -326,6 +393,12 @@ namespace ChatTest
             }
         }
 
+        /// <summary>
+        /// Wpisz wiadomość na formatkę  
+        /// </summary>
+        /// <param name="who"></param>
+        /// <param name="message"></param>
+        /// <param name="datatime"></param>
         private void TypeText(string who, string message, DateTime datatime)
         {
             SetTextHTML("<table><tr><td width=\"10%\"><b><font size=1>" + who + "</font></b></td><td width=\"90%\"><font size=1>(" + datatime + "):</font></td></tr>");
@@ -334,16 +407,29 @@ namespace ChatTest
             SetScroll();
         }
 
+        /// <summary>
+        /// Zmień status w ComboBox'ie
+        /// </summary>
+        /// <param name="text"></param>
         private void ChangeComboBox(string text)
         {
             ComboBoxStatus.Text = text;
         }
 
+        /// <summary>
+        /// Ustaw adres IP
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ComboBoxIPAddress_SelectedIndexChanged(object sender, EventArgs e)
         {
             trafficController.SetIPAddress(IPAddress.Parse(ComboBoxIPAddress.Text));
         }
 
+        /// <summary>
+        /// Ustaw kolory na formatce, zgodnie z listą
+        /// </summary>
+        /// <param name="colorList"></param>
         private void SetColor(List<User> colorList)
         {
             if (ListViewAddressBook.InvokeRequired)
@@ -404,8 +490,6 @@ namespace ChatTest
 
                 /// Manages the initial import of the adress book and statuses
                 List<User> temp = trafficController.GetUsers();
-                if (temp == null)
-                    SetText("Coś poszło nie tak");
                 SetBook(temp);
 
                 /// Manages the initial import of statuses and description
@@ -414,8 +498,6 @@ namespace ChatTest
                 /// Register sms module
                 trafficController.RegisterToModules();
 
-                /// Ustawiamy status oznaczający, że wszystkie dane zostały już ustawione i możemy działać w naszej aplikacji
-                //trafficController.SetState(State.DataSet);
             }
             /// Changes the status displayed in combobox, when you logged in
             if (trafficController.GetState() == State.LoggedIn)
@@ -427,41 +509,6 @@ namespace ChatTest
             TextBoxPassword.Text = "";
         }
 
-        /// <summary>
-        /// Ta funkcja póki co nie ma większego sensu, trzeba to ogarnąć
-        /// </summary>
-        /// <param name="packet"></param>
-        //private void PhoneMonitor(XCTIP packet)
-        //{
-        //    if (packet.SyncItems != null && packet.SyncItems[0].Change_EV != null)
-        //    {
-        //        // tutaj zczytywać na nowo książkę adresową i wprowadzać zmiany do słowników
-        //        connection.SendingPacket(xmlCreator.Sync_REQ());
-        //        foreach (var contact in connection.GetFramesList())
-        //        {
-        //            packet = ServiceXML.GenericDeserialize<XCTIP>(contact);
-        //            if (packet.SyncItems != null && packet.SyncItems[0].Records_ANS != null)
-        //                foreach (var row in packet.SyncItems[0].Records_ANS[0].Row)
-        //                {
-        //                    if (row.Contact != null && row.Contact[0].Phone != null)
-        //                    {
-        //                        if (!StaticFields.phone.ContainsKey(row.Contact[0].Name))
-        //                        {
-        //                            StaticFields.phone.Remove(row.Contact[0].Name);
-        //                            StaticFields.phone.Add(row.Contact[0].Name, row.Contact[0].Phone[row.Contact[0].Phone.Length].Number);
-        //                        }
-        //                        if (!StaticFields.description.ContainsKey(row.Contact[0].Name))
-        //                        {
-        //                            StaticFields.description.Remove(row.Contact[0].Name);
-        //                            StaticFields.description.Add(row.Contact[0].Name, row.Contact[0].Phone[row.Contact[0].Phone.Length].Comment);
-        //                        }
-        //                    }
-        //                }
-        //        }
-        //    }
-        //}
-
-
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Control && e.KeyCode == Keys.L)
@@ -470,7 +517,7 @@ namespace ChatTest
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-
+            trafficController.CloseConnection();
         }
     }
 }

@@ -18,6 +18,8 @@ namespace ChatTest
 
         private Logger logger = new Logger();
 
+        private Thread listener;
+
         public delegate void OnMessageReceivedDelegate(TrafficController sender, Message msg);
         public event OnMessageReceivedDelegate OnMessageReceived;
 
@@ -26,8 +28,8 @@ namespace ChatTest
 
         public TrafficController()
         {
-            Thread thread = new Thread(Start);
-            thread.Start();
+            listener = new Thread(Start);
+            listener.Start();
             xmlInterpreter = new XMLInterpreter(connection);
         }
 
@@ -38,11 +40,14 @@ namespace ChatTest
             {
                 try
                 {
-                    //if (connection.State == State.DataSet)
                     {
+                        /// odpowiada za ciągłe pobieranie danych i zapisywanie ich do określonych zmiennych
                         GetData();
 
+                        /// sprawdza czy nie zmienił się status, któregoś z użytkowników 
                         GetChangedStatus();
+
+                        /// sprawdza czy nie przyszła żadna nowa wiadomość
                         GetMessage();
                     }
                 }
@@ -52,6 +57,12 @@ namespace ChatTest
                 }
                 Thread.Sleep(500);
             }
+        }
+
+        public void CloseConnection()
+        {
+            listener.Abort();
+            connection.CloseConnection();
         }
 
         public State GetState()
@@ -132,9 +143,8 @@ namespace ChatTest
                 GetAddressBook();
                 string rid;
                 connection.SendingPacket(xmlCreator.StatusRegister_REQ(out rid)); // zgłaszamy, że chcemy obserwować zmiany statusów
+                xmlInterpreter.StatusError(GetResponse(rid));
 
-                if (xmlInterpreter.StatusError(GetResponse(rid)))
-                    return null;
                 return xmlInterpreter.GetStatus(); // zwraca ramki z obecnymi statusami do listy obiektów
             }
         }

@@ -6,6 +6,10 @@ namespace ChatTest
     {
         private static int id = 1;
 
+        /// <summary>
+        /// Zrób ramkę wyloguj
+        /// </summary>
+        /// <returns></returns>
         public string Logout()
         {
             XCTIP packet = new XCTIP();
@@ -19,6 +23,13 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę zaloguj
+        /// </summary>
+        /// <param name="login"></param>
+        /// <param name="pass"></param>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string MakeLog(string login, string pass, out string rid)
         {
             XCTIP packet = new XCTIP();
@@ -35,6 +46,13 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę aktualizującą status i/lub opis
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="info"></param>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string StatusUpdate_REQ(string status, string info, out string rid)
         {
             XCTIP packet = new XCTIP();
@@ -51,6 +69,11 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę rejestrującą do modułu Status
+        /// </summary>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string StatusRegister_REQ(out string rid)
         {
             XCTIP packet = new XCTIP();
@@ -65,6 +88,13 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę z zapytaniem o dane synchronizacyjne
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="rid"></param>
+        /// <param name="limit"></param>
+        /// <returns></returns>
         public string Sync_REQ(string type, out string rid, string limit="10")
         {
             XCTIP packet = new XCTIP();
@@ -81,6 +111,12 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę z zapytaniem o automatyczne otrzymywanie informacji o zmianach
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string SyncAutoChange_REQ(string type, out string rid)
         {
             XCTIP packet = new XCTIP();
@@ -96,6 +132,11 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę rejestrującą do modułu Sync
+        /// </summary>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string SyncRegister_REQ(out string rid)
         {
             XCTIP packet = new XCTIP();
@@ -112,6 +153,15 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę z danymi do edycji kontaktu
+        /// </summary>
+        /// <param name="number"></param>
+        /// <param name="comment"></param>
+        /// <param name="name"></param>
+        /// <param name="id"></param>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string EditContact(string number, string comment, string name, string id, out string rid)
         {
             XCTIP packet = new XCTIP();
@@ -143,6 +193,11 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę rejestrującą do modułu SMS
+        /// </summary>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string SMSRegister_REQ(out string rid)
         {
             XCTIP packet = new XCTIP();
@@ -157,6 +212,10 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę wyrejestrowującą z modułu SMS
+        /// </summary>
+        /// <returns></returns>
         public string SMSUnregister_REQ()
         {
             XCTIP packet = new XCTIP();
@@ -170,6 +229,16 @@ namespace ChatTest
             return xml;
         }
 
+        /// <summary>
+        /// Zrób ramkę z smsem
+        /// </summary>
+        /// <param name="number"></param>
+        /// <param name="smsId"></param>
+        /// <param name="text"></param>
+        /// <param name="dontBuffer"></param>
+        /// <param name="userData"></param>
+        /// <param name="rid"></param>
+        /// <returns></returns>
         public string SMSSend_REQ(string number, string smsId, string text, string dontBuffer, string userData, out string rid)
         {
             XCTIP packet = new XCTIP();
