@@ -317,7 +317,6 @@ namespace ChatTest
                 }
 
                 ListViewAddressBook.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
-                ListViewAddressBook.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
                 ListViewAddressBook.Columns[0].Width = 0;
             }
         }

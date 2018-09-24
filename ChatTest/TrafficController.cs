@@ -215,13 +215,11 @@ namespace ChatTest
             {
                 string sid;
                 connection.SendingPacket(xmlCreator.SMSRegister_REQ(out sid));
-                if (xmlInterpreter.SMSError(GetResponse(sid)))
-                    return;
+                xmlInterpreter.SMSError(GetResponse(sid));
                 //connection.SendingPacket(xmlCreator.SyncRegister_REQ());
                 string rid;
                 connection.SendingPacket(xmlCreator.SyncAutoChange_REQ("HistoryMsg", out rid));
-                if (xmlInterpreter.SyncError(GetResponse(rid)))
-                    return;
+                xmlInterpreter.SyncError(GetResponse(rid));
                 /// udało się zarejestrować do modułów
             }
         }
