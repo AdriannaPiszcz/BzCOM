@@ -24,11 +24,6 @@ namespace ChatTest
 
         private Logger logger = new Logger();
         
-        public NetworkStream GetStream()
-        {
-            return stream;
-        }
-       
         public bool SetConnection()
         {
             try
