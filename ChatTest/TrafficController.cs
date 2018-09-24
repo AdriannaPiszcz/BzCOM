@@ -90,8 +90,7 @@ namespace ChatTest
             lock (connection)
             {
 
-                string rid;
-                connection.SendingPacket(xmlCreator.MakeLog(login, pass, out rid));
+                connection.SendingPacket(xmlCreator.MakeLog(login, pass, out string rid));
                 XCTIP packet = GetResponse(rid);
                 var temp = xmlInterpreter.LogIn(packet);
                 if (temp != null)
@@ -117,8 +116,7 @@ namespace ChatTest
         {
             lock (connection)
             {
-                string rid;
-                connection.SendingPacket(xmlCreator.Sync_REQ("Book", out rid));
+                connection.SendingPacket(xmlCreator.Sync_REQ("Book", out string rid));
                 if (xmlInterpreter.SyncError(GetResponse(rid)))
                     return;
 
@@ -130,8 +128,7 @@ namespace ChatTest
         {
             lock (connection)
             {
-                string rid;
-                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status.ToString(), null, out rid));
+                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status.ToString(), null, out string rid));
                 xmlInterpreter.StatusError(GetResponse(rid));
             }
         }
@@ -141,8 +138,7 @@ namespace ChatTest
             lock (connection)
             {
                 GetAddressBook();
-                string rid;
-                connection.SendingPacket(xmlCreator.StatusRegister_REQ(out rid)); // zgłaszamy, że chcemy obserwować zmiany statusów
+                connection.SendingPacket(xmlCreator.StatusRegister_REQ(out string rid)); // zgłaszamy, że chcemy obserwować zmiany statusów
                 xmlInterpreter.StatusError(GetResponse(rid));
 
                 return xmlInterpreter.GetStatus(); // zwraca ramki z obecnymi statusami do listy obiektów
@@ -153,8 +149,7 @@ namespace ChatTest
         {
             lock (connection)
             {
-                string rid;
-                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status, info, out rid));
+                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status, info, out string rid));
                 xmlInterpreter.StatusError(GetResponse(rid));
             }
         }
@@ -200,10 +195,9 @@ namespace ChatTest
         public XCTIP GetResponse(string id, int timeoutMs = 120000)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-            XCTIP result;
             while (stopwatch.ElapsedMilliseconds < timeoutMs)
             {
-                if (responses.TryRemove(id, out result))
+                if (responses.TryRemove(id, out XCTIP result))
                     return result;
             }
             throw new TimeoutException($"Upłynął czas oczekiwania na odpowiedź {id}");
@@ -213,12 +207,10 @@ namespace ChatTest
         {
             lock (connection)
             {
-                string sid;
-                connection.SendingPacket(xmlCreator.SMSRegister_REQ(out sid));
+                connection.SendingPacket(xmlCreator.SMSRegister_REQ(out string sid));
                 xmlInterpreter.SMSError(GetResponse(sid));
                 //connection.SendingPacket(xmlCreator.SyncRegister_REQ());
-                string rid;
-                connection.SendingPacket(xmlCreator.SyncAutoChange_REQ("HistoryMsg", out rid));
+                connection.SendingPacket(xmlCreator.SyncAutoChange_REQ("HistoryMsg", out string rid));
                 xmlInterpreter.SyncError(GetResponse(rid));
                 /// udało się zarejestrować do modułów
             }
@@ -228,8 +220,7 @@ namespace ChatTest
         {
             lock (connection)
             {
-                string rid;
-                connection.SendingPacket(xmlCreator.SMSSend_REQ(number, smsId, text, dontBuffer, userData, out rid));
+                connection.SendingPacket(xmlCreator.SMSSend_REQ(number, smsId, text, dontBuffer, userData, out string rid));
                 return xmlInterpreter.SMSError(GetResponse(rid));
             }
         }
@@ -258,8 +249,7 @@ namespace ChatTest
                 if (!xmlInterpreter.IsSyncChange_EV(data))
                     return null;
 
-                string rid;
-                connection.SendingPacket(xmlCreator.Sync_REQ("HistoryMsg", out rid, "30"));
+                connection.SendingPacket(xmlCreator.Sync_REQ("HistoryMsg", out string rid, "30"));
 
                 if (xmlInterpreter.SyncError(GetResponse(rid)))
                     return null;

@@ -308,7 +308,7 @@ public partial class XCTIPLogLogInfo_ANS
         }
         set
         {
-            this.commentField = value;
+            this.voIPField = value;
         }
     }
     

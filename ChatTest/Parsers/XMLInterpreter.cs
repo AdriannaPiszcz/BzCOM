@@ -114,8 +114,10 @@ namespace ChatTest
                     var packet = TrafficController.asyncData[i];
                     if (packet.StatusItems != null && packet.StatusItems[0].Refresh_EV != null)
                     {
-                        User user = new User();
-                        user.UserId = packet.StatusItems[0].Refresh_EV[0].Id;
+                        User user = new User
+                        {
+                            UserId = packet.StatusItems[0].Refresh_EV[0].Id
+                        };
                         foreach (var el in UserInfo)
                         {
                             if (el.UserId == user.UserId)

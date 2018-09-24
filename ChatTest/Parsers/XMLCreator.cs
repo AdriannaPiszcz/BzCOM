@@ -14,8 +14,10 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPLog xCTIPLog = new XCTIPLog();
-            XCTIPLogLogout logout = new XCTIPLogLogout();
-            logout.CId = id++.ToString();
+            XCTIPLogLogout logout = new XCTIPLogLogout
+            {
+                CId = id++.ToString()
+            };
             xCTIPLog.Logout = new XCTIPLogLogout[] { logout };
             packet.LogItems = new XCTIPLog[] { xCTIPLog };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -34,10 +36,12 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPLog xCTIPLog = new XCTIPLog();
-            XCTIPLogMakeLog makeLog = new XCTIPLogMakeLog();
-            makeLog.CId = id++.ToString();
-            makeLog.Login = login;
-            makeLog.Pass = pass;
+            XCTIPLogMakeLog makeLog = new XCTIPLogMakeLog
+            {
+                CId = id++.ToString(),
+                Login = login,
+                Pass = pass
+            };
             xCTIPLog.MakeLog = new XCTIPLogMakeLog[] { makeLog };
             packet.LogItems = new XCTIPLog[] { xCTIPLog };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -57,10 +61,12 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPStatus xCTIPStatus = new XCTIPStatus();
-            XCTIPStatusUpdate_REQ update = new XCTIPStatusUpdate_REQ();
-            update.CId = id++.ToString();
-            update.AppState = status;
-            update.AppInfo = info;
+            XCTIPStatusUpdate_REQ update = new XCTIPStatusUpdate_REQ
+            {
+                CId = id++.ToString(),
+                AppState = status,
+                AppInfo = info
+            };
             xCTIPStatus.Update_REQ = new XCTIPStatusUpdate_REQ[] { update };
             packet.StatusItems = new XCTIPStatus[] { xCTIPStatus };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -78,8 +84,10 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPStatus xCTIPStatus = new XCTIPStatus();
-            XCTIPStatusRegister_REQ reg = new XCTIPStatusRegister_REQ();
-            reg.CId = id++.ToString();
+            XCTIPStatusRegister_REQ reg = new XCTIPStatusRegister_REQ
+            {
+                CId = id++.ToString()
+            };
             xCTIPStatus.Register_REQ = new XCTIPStatusRegister_REQ[] { reg };
             packet.StatusItems = new XCTIPStatus[] { xCTIPStatus };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -99,10 +107,12 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPSync xCTIPSync = new XCTIPSync();
-            XCTIPSyncSync_REQ req = new XCTIPSyncSync_REQ();
-            req.CId = id++.ToString();
-            req.SyncType = type;
-            req.Limit = limit;
+            XCTIPSyncSync_REQ req = new XCTIPSyncSync_REQ
+            {
+                CId = id++.ToString(),
+                SyncType = type,
+                Limit = limit
+            };
             xCTIPSync.Sync_REQ = new XCTIPSyncSync_REQ[] { req };
             packet.SyncItems = new XCTIPSync[] { xCTIPSync };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -121,9 +131,11 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPSync xCTIPSync = new XCTIPSync();
-            XCTIPSyncAutoChange_REQ req = new XCTIPSyncAutoChange_REQ();
-            req.CId = id++.ToString();
-            req.SyncType = type;
+            XCTIPSyncAutoChange_REQ req = new XCTIPSyncAutoChange_REQ
+            {
+                CId = id++.ToString(),
+                SyncType = type
+            };
             xCTIPSync.AutoChange_REQ = new XCTIPSyncAutoChange_REQ[] { req };
             packet.SyncItems = new XCTIPSync[] { xCTIPSync };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -141,10 +153,12 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPSync xCTIPSync = new XCTIPSync();
-            XCTIPSyncRegister_REQ register_REQ = new XCTIPSyncRegister_REQ();
-            register_REQ.CId = id++.ToString();
-            register_REQ.SyncType = "HistoryMsg";
-            register_REQ.SendOnline = "";
+            XCTIPSyncRegister_REQ register_REQ = new XCTIPSyncRegister_REQ
+            {
+                CId = id++.ToString(),
+                SyncType = "HistoryMsg",
+                SendOnline = ""
+            };
             xCTIPSync.Register_REQ = new XCTIPSyncRegister_REQ[] { register_REQ };
             packet.SyncItems = new XCTIPSync[] { xCTIPSync };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -202,8 +216,10 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPSMS xCTIPSMS = new XCTIPSMS();
-            XCTIPSMSRegister_REQ register_REQ = new XCTIPSMSRegister_REQ();
-            register_REQ.CId = id++.ToString();
+            XCTIPSMSRegister_REQ register_REQ = new XCTIPSMSRegister_REQ
+            {
+                CId = id++.ToString()
+            };
             xCTIPSMS.Register_REQ = new XCTIPSMSRegister_REQ[] { register_REQ };
             packet.SMSItems = new XCTIPSMS[] { xCTIPSMS };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -220,8 +236,10 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPSMS xCTIPSMS = new XCTIPSMS();
-            XCTIPSMSUnregister_REQ unregister_REQ = new XCTIPSMSUnregister_REQ();
-            unregister_REQ.CId = id++.ToString();
+            XCTIPSMSUnregister_REQ unregister_REQ = new XCTIPSMSUnregister_REQ
+            {
+                CId = id++.ToString()
+            };
             xCTIPSMS.Unregister_REQ = new XCTIPSMSUnregister_REQ[] { unregister_REQ };
             packet.SMSItems = new XCTIPSMS[] { xCTIPSMS };
             String xml = ServiceXML.GenericSerialize(packet, true);
@@ -243,14 +261,16 @@ namespace ChatTest
         {
             XCTIP packet = new XCTIP();
             XCTIPSMS xCTIPSMS = new XCTIPSMS();
-            XCTIPSMSSend_REQ send_REQ = new XCTIPSMSSend_REQ();
-            send_REQ.CId = id++.ToString();
-            send_REQ.Number = number;
-            send_REQ.SMSId = smsId;
-            send_REQ.Type = "Internal";
-            send_REQ.Text = text;
-            send_REQ.DontBuffer = dontBuffer;
-            send_REQ.UserData = userData;
+            XCTIPSMSSend_REQ send_REQ = new XCTIPSMSSend_REQ
+            {
+                CId = id++.ToString(),
+                Number = number,
+                SMSId = smsId,
+                Type = "Internal",
+                Text = text,
+                DontBuffer = dontBuffer,
+                UserData = userData
+            };
             xCTIPSMS.Send_REQ = new XCTIPSMSSend_REQ[] { send_REQ };
             packet.SMSItems = new XCTIPSMS[] { xCTIPSMS };
             String xml = ServiceXML.GenericSerialize(packet, true);
