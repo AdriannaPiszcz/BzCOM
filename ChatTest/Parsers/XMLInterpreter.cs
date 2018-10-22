@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ChatTest
 {
@@ -103,7 +104,7 @@ namespace ChatTest
         /// <summary>
         /// Pobiera wszystkie statusy - metoda startowa
         /// </summary>
-        /// <returns></returns>
+        /// <returns> </returns>
         public List<User> GetStatus()
         {
             List<User> users = new List<User>();
@@ -354,10 +355,10 @@ namespace ChatTest
             }
         }
 
-        public List<XCTIP> ParsePacket()
+        public async Task<List<XCTIP>> ParsePacket()
         {
             List<XCTIP> packets = new List<XCTIP>();
-            foreach (var item in connection.GetFramesList())
+            foreach (var item in await connection.GetFramesList())
             {
                 var packet = ServiceXML.GenericDeserialize<XCTIP>(item);
                 packets.Add(packet);

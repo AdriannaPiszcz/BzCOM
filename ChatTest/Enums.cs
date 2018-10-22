@@ -2,6 +2,9 @@
 
 namespace ChatTest
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public enum Status
     {
         AVAILABLE,

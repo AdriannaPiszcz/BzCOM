@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 
 namespace ChatTest
 {
@@ -200,10 +201,10 @@ namespace ChatTest
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void TextBoxDescription_KeyPress(object sender, KeyPressEventArgs e)
+        private async void TextBoxDescription_KeyPress(object sender, KeyPressEventArgs e)
         {
             if ((trafficController.GetState() == State.LoggedIn || trafficController.GetState() == State.OpenedGate) && e.KeyChar == (char)13)
-                trafficController.SetDescription(ComboBoxStatus.Text, TextBoxDescription.Text);
+                await trafficController.SetDescription(ComboBoxStatus.Text, TextBoxDescription.Text);
 
         }
 
@@ -269,10 +270,10 @@ namespace ChatTest
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ComboBoxStatus_SelectedIndexChanged(object sender, EventArgs e)
+        private async void ComboBoxStatus_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (trafficController.GetState() == State.LoggedIn || trafficController.GetState() == State.OpenedGate)
-                trafficController.SetStatus((Status)Enum.Parse(typeof(Status), ComboBoxStatus.Text));
+                await trafficController.SetStatus((Status)Enum.Parse(typeof(Status), ComboBoxStatus.Text));
         }
 
         /// <summary>
@@ -456,14 +457,14 @@ namespace ChatTest
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ButtonSend_Click(object sender, EventArgs e)
+        private async void ButtonSend_Click(object sender, EventArgs e)
         {
             if (trafficController.GetState() == State.OpenedGate)
             {
                 /// TODO
                 //Random r = new Random();
                 /// Wysyłanie konkretnej wiadomości do kontaktu, z którym mamy otwartego gate'a
-                if (!trafficController.SMSSend(currentNumber, null, TextBoxMessage.Text, "", null))
+                if (!(await trafficController.SMSSendAsync(currentNumber, null, TextBoxMessage.Text, "", null)))
                 {
                     TypeText("ja", TextBoxMessage.Text, DateTime.Now);
                 }
@@ -479,23 +480,23 @@ namespace ChatTest
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ButtonLogin_Click(object sender, EventArgs e)
+        private async void ButtonLogin_Click(object sender, EventArgs e)
         {
             if (trafficController.GetState() == State.Connected)
             {
                 /// Checking, if login went successfully, if not, then showing the error
                 /// SetText powinno być wykorzystywane tylko i wyłącznie do wyświetlania informacji z klasy logującej
-                SetText(trafficController.LogIn(TextBoxLogin.Text, TextBoxPassword.Text));
+                SetText(await trafficController.LogIn(TextBoxLogin.Text, TextBoxPassword.Text));
 
                 /// Manages the initial import of the adress book and statuses
-                List<User> temp = trafficController.GetUsers();
+                List<User> temp = await trafficController.GetUsers();
                 SetBook(temp);
 
                 /// Manages the initial import of statuses and description
                 SetColor(trafficController.SetColor(temp));
-                
+
                 /// Register sms module
-                trafficController.RegisterToModules();
+                await trafficController.RegisterToModules();
 
             }
             /// Changes the status displayed in combobox, when you logged in
@@ -517,6 +518,11 @@ namespace ChatTest
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             trafficController.CloseConnection();
+        }
+
+        private async void ButtonLogout_Click(object sender, EventArgs e)
+        {
+            await trafficController.LogOut();
         }
     }
 }

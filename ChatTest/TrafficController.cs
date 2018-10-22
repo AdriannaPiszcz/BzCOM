@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ChatTest
 {
@@ -33,30 +34,30 @@ namespace ChatTest
             xmlInterpreter = new XMLInterpreter(connection);
         }
 
-        public void Start()
+        public async void Start()
         {
-            connection.SetConnection();
-            while (true)
-            {
-                try
+            if (connection.SetConnection())
+                while (true)
                 {
+                    try
                     {
-                        /// odpowiada za ciągłe pobieranie danych i zapisywanie ich do określonych zmiennych
-                        GetData();
+                        {
+                            /// odpowiada za ciągłe pobieranie danych i zapisywanie ich do określonych zmiennych
+                            await GetData();
 
-                        /// sprawdza czy nie zmienił się status, któregoś z użytkowników 
-                        GetChangedStatus();
+                            /// sprawdza czy nie zmienił się status, któregoś z użytkowników 
+                            GetChangedStatus();
 
-                        /// sprawdza czy nie przyszła żadna nowa wiadomość
-                        GetMessage();
+                            /// sprawdza czy nie przyszła żadna nowa wiadomość
+                            GetMessage();
+                        }
                     }
+                    catch (Exception e)
+                    {
+                        logger.Debug($"Exception: {e}");
+                    }
+                    Thread.Sleep(500);
                 }
-                catch (Exception e)
-                {
-                    logger.Debug($"Exception: {e}");
-                }
-                Thread.Sleep(500);
-            }
         }
 
         public void CloseConnection()
@@ -85,73 +86,72 @@ namespace ChatTest
             connection.Port = port;
         }
 
-        public string LogIn(string login, string pass)
+        public async Task<string> LogIn(string login, string pass)
         {
-            lock (connection)
+            //lock (connection)
+            //{
+            await connection.SendingPacket(xmlCreator.MakeLog(login, pass, out string rid));
+            XCTIP packet = GetResponse(rid);
+            var temp = xmlInterpreter.LogIn(packet);
+            if (temp != null)
             {
-
-                connection.SendingPacket(xmlCreator.MakeLog(login, pass, out string rid));
-                XCTIP packet = GetResponse(rid);
-                var temp = xmlInterpreter.LogIn(packet);
-                if (temp != null)
-                {
-                    SetStatus(Status.AVAILABLE);
-                    connection.State = State.LoggedIn;
-                    return $"{temp}";
-                }
-                else
-                    return "Wystąpił błąd w trakcie logowania. Spróbuj ponownie.";
+                await SetStatus(Status.AVAILABLE);
+                connection.State = State.LoggedIn;
+                return $"{temp}";
             }
+            else
+                return "Wystąpił błąd w trakcie logowania. Spróbuj ponownie.";
+            //}
         }
 
-        public void LogOut()
+        public async Task LogOut()
         {
-            lock (connection)
-            {
-                connection.SendingPacket(xmlCreator.Logout());
-            }
+            //lock (connection)
+            //{
+            await connection.SendingPacket(xmlCreator.Logout());
+            //}
         }
 
-        public void GetAddressBook()
+        public async Task GetAddressBook()
         {
-            lock (connection)
-            {
-                connection.SendingPacket(xmlCreator.Sync_REQ("Book", out string rid));
-                if (xmlInterpreter.SyncError(GetResponse(rid)))
-                    return;
+            //lock (connection)
+            //{
+            await connection.SendingPacket(xmlCreator.Sync_REQ("Book", out string rid));
+            if (xmlInterpreter.SyncError(GetResponse(rid)))
+                return;
 
-                xmlInterpreter.GetBook();
-            }
+            xmlInterpreter.GetBook();
+            //}
         }
 
-        public void SetStatus(Status status)
+        public async Task SetStatus(Status status)
         {
-            lock (connection)
-            {
-                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status.ToString(), null, out string rid));
-                xmlInterpreter.StatusError(GetResponse(rid));
-            }
+            //lock (connection)
+            //{
+            await connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status.ToString(), null, out string rid));
+            xmlInterpreter.StatusError(GetResponse(rid));
+            //}
         }
 
-        public List<User> GetUsers()
+        public async Task<List<User>> GetUsers()
         {
-            lock (connection)
-            {
-                GetAddressBook();
-                connection.SendingPacket(xmlCreator.StatusRegister_REQ(out string rid)); // zgłaszamy, że chcemy obserwować zmiany statusów
-                xmlInterpreter.StatusError(GetResponse(rid));
+            //lock (connection)
+            //{
+            await GetAddressBook();
+            await connection.SendingPacket(xmlCreator.StatusRegister_REQ(out string rid)); // zgłaszamy, że chcemy obserwować zmiany statusów
+            xmlInterpreter.StatusError(GetResponse(rid));
 
-                return xmlInterpreter.GetStatus(); // zwraca ramki z obecnymi statusami do listy obiektów
-            }
+            return xmlInterpreter.GetStatus(); // zwraca ramki z obecnymi statusami do listy obiektów
+            //}
         }
 
-        public void SetDescription(string status, string info)
+        public async Task SetDescription(string status, string info)
         {
-            lock (connection)
-            {
-                connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status, info, out string rid));
-                xmlInterpreter.StatusError(GetResponse(rid));
-            }
+            //lock (connection)
+            //{
+            await connection.SendingPacket(xmlCreator.StatusUpdate_REQ(status, info, out string rid));
+            xmlInterpreter.StatusError(GetResponse(rid));
+            //}
         }
 
         public void GetChangedStatus()
@@ -203,26 +203,26 @@ namespace ChatTest
             throw new TimeoutException($"Upłynął czas oczekiwania na odpowiedź {id}");
         }
 
-        public void RegisterToModules()
+        public async Task RegisterToModules()
         {
-            lock (connection)
-            {
-                connection.SendingPacket(xmlCreator.SMSRegister_REQ(out string sid));
-                xmlInterpreter.SMSError(GetResponse(sid));
-                //connection.SendingPacket(xmlCreator.SyncRegister_REQ());
-                connection.SendingPacket(xmlCreator.SyncAutoChange_REQ("HistoryMsg", out string rid));
-                xmlInterpreter.SyncError(GetResponse(rid));
-                /// udało się zarejestrować do modułów
-            }
+            //lock (connection)
+            //{
+            await connection.SendingPacket(xmlCreator.SMSRegister_REQ(out string sid));
+            xmlInterpreter.SMSError(GetResponse(sid));
+            //connection.SendingPacket(xmlCreator.SyncRegister_REQ());
+            await connection.SendingPacket(xmlCreator.SyncAutoChange_REQ("HistoryMsg", out string rid));
+            xmlInterpreter.SyncError(GetResponse(rid));
+            /// udało się zarejestrować do modułów
+            //}
         }
 
-        public bool SMSSend(string number, string smsId, string text, string dontBuffer, string userData)
+        public async Task<bool> SMSSendAsync(string number, string smsId, string text, string dontBuffer, string userData)
         {
-            lock (connection)
-            {
-                connection.SendingPacket(xmlCreator.SMSSend_REQ(number, smsId, text, dontBuffer, userData, out string rid));
-                return xmlInterpreter.SMSError(GetResponse(rid));
-            }
+            //lock (connection)
+            //{
+            await connection.SendingPacket(xmlCreator.SMSSend_REQ(number, smsId, text, dontBuffer, userData, out string rid));
+            return xmlInterpreter.SMSError(GetResponse(rid));
+            //}
         }
 
         public void GetMessage()
@@ -242,25 +242,25 @@ namespace ChatTest
             return messages;
         }
 
-        public List<Message> GetMessagesSimple(List<XCTIP> data)
+        public async Task<List<Message>> GetMessagesSimple(List<XCTIP> data)
         {
-            lock (connection)
-            {
-                if (!xmlInterpreter.IsSyncChange_EV(data))
-                    return null;
+            //lock (connection)
+            //{
+            if (!xmlInterpreter.IsSyncChange_EV(data))
+                return null;
 
-                connection.SendingPacket(xmlCreator.Sync_REQ("HistoryMsg", out string rid, "30"));
+            await connection.SendingPacket(xmlCreator.Sync_REQ("HistoryMsg", out string rid, "30"));
 
-                if (xmlInterpreter.SyncError(GetResponse(rid)))
-                    return null;
+            if (xmlInterpreter.SyncError(GetResponse(rid)))
+                return null;
 
-                return xmlInterpreter.GetMessageRecords_ANS();
-            }
+            return xmlInterpreter.GetMessageRecords_ANS();
+            //}
         }
 
-        public void GetData()
+        public async Task GetData()
         {
-            var packets = xmlInterpreter.ParsePacket();
+            var packets = await xmlInterpreter.ParsePacket();
             foreach (var packet in packets)
             {
                 if (packet.LogItems?[0].Answer != null)

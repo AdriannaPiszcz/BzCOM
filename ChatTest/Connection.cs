@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ChatTest
 {
@@ -15,7 +16,7 @@ namespace ChatTest
         public IPAddress AddressIP { get; set; }
 
         public int Port { get; set; }
-        
+
         private NetworkStream stream;
 
         private BinaryWriter writing;
@@ -23,7 +24,7 @@ namespace ChatTest
         public State State { get; set; }
 
         private Logger logger = new Logger();
-        
+
         public bool SetConnection()
         {
             try
@@ -35,6 +36,8 @@ namespace ChatTest
                 client = new TcpClient();
                 client.Connect(endPoint);
                 stream = client.GetStream();
+                stream.WriteTimeout = 5000;
+                stream.ReadTimeout = 5000;
                 writing = new BinaryWriter(stream, Encoding.GetEncoding(852));
 
                 State = State.Connected;
@@ -73,32 +76,41 @@ namespace ChatTest
                 logger.Debug($"Exception:\n{e}\n");
                 State = State.Connected;
             }
-            
+
         }
 
-        public void SendingPacket(string xml)
+        public async Task SendingPacket(string xml)
         {
-            writing.Write(xml);
-            System.Diagnostics.Debug.WriteLine($"Sent:\n{xml}\n");
-            logger.Debug($"Sent:\n{xml}\n");
+            try
+            {
+                Byte[] data = Encoding.ASCII.GetBytes(xml);
+                await stream.WriteAsync(data, 0, data.Length);
+                System.Diagnostics.Debug.WriteLine($"Sent:\n{xml}\n");
+                logger.Debug($"Sent:\n{xml}\n");
+            }
+            catch(TimeoutException e)
+            {
+                System.Diagnostics.Debug.WriteLine(DateTime.Now + ": Nie udało się wysłać" + e);
+                return;
+            }
         }
 
-        public string ReceivingPacket()
+        public async Task<string> ReceivingPacket()
         {
             byte[] data = new Byte[65536];
             string message = String.Empty;
-            
+
             try
             {
                 Thread.Sleep(500);
                 while (stream.DataAvailable)
                 {
-                    Int32 bytes = stream.Read(data, 0, data.Length);
+                    Int32 bytes = await stream.ReadAsync(data, 0, data.Length);
                     message += Encoding.GetEncoding(852).GetString(data, 0, bytes);
                 }
 
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 logger.Debug($"Exception:\n{e}\n");
             }
@@ -111,9 +123,9 @@ namespace ChatTest
             return message;
         }
 
-        public List<string> GetFramesList()
+        public async Task<List<string>> GetFramesList()
         {
-            string message = ReceivingPacket();
+            string message = await ReceivingPacket();
             var packets = new List<String>();
             int position = 0;
             int start = 0;
