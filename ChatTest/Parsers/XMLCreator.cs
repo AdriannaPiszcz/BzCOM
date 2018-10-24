@@ -4,6 +4,9 @@ namespace ChatTest
 {
     public class XMLCreator
     {
+        /// <summary>
+        /// Liczba porządkowa komendy
+        /// </summary>
         private static int id = 1;
 
         /// <summary>
@@ -97,7 +100,7 @@ namespace ChatTest
         }
 
         /// <summary>
-        /// Zrób ramkę z zapytaniem o dane synchronizacyjne
+        /// Zrób ramkę z zapytaniem o dane synchronizacyjne książki telefonicznej
         /// </summary>
         /// <param name="type"></param>
         /// <param name="rid"></param>
